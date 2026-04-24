@@ -11,34 +11,44 @@ import {
   Legend,
 } from "recharts";
 
+interface RadarSeries {
+  name: string;
+  data: number[];
+  color: string;
+  fillOpacity?: number;
+}
+
 interface RadarChartProps {
-  data: { subject: string; A: number; B?: number; fullMark: number }[];
+  subjects: string[];
+  series: RadarSeries[];
   height?: number;
 }
 
-export function SimpleRadarChart({ data, height = 280 }: RadarChartProps) {
+export function SimpleRadarChart({ subjects, series, height = 300 }: RadarChartProps) {
+  const chartData = subjects.map((subject, i) => {
+    const row: Record<string, string | number> = { subject };
+    series.forEach((s) => {
+      row[s.name] = s.data[i] ?? 0;
+    });
+    return row;
+  });
+
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
+      <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData}>
         <PolarGrid stroke="#e5e7eb" />
         <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12 }} />
         <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
-        <Radar
-          name="当前 IP"
-          dataKey="A"
-          stroke="#3b82f6"
-          fill="#3b82f6"
-          fillOpacity={0.3}
-        />
-        {data[0]?.B !== undefined && (
+        {series.map((s) => (
           <Radar
-            name="对比 IP"
-            dataKey="B"
-            stroke="#ef4444"
-            fill="#ef4444"
-            fillOpacity={0.3}
+            key={s.name}
+            name={s.name}
+            dataKey={s.name}
+            stroke={s.color}
+            fill={s.color}
+            fillOpacity={s.fillOpacity ?? 0.25}
           />
-        )}
+        ))}
         <Legend />
         <Tooltip
           contentStyle={{

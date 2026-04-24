@@ -6,7 +6,7 @@ export const APP_DESCRIPTION = "IP 联名 / 授权 / 代言数据智能分析与
 export const NAV_ITEMS: NavItem[] = [
   { title: "首页", path: "/", icon: "LayoutDashboard" },
   { title: "IP 库", path: "/ip-management/", icon: "Users" },
-  { title: "数据分析", path: "/data-analysis/", icon: "BarChart3" },
+  { title: "价值评估", path: "/data-analysis/", icon: "BarChart3" },
   { title: "舆情监控", path: "/public-opinion/", icon: "Eye" },
   { title: "合作评估", path: "/cooperation/", icon: "Handshake" },
   { title: "对比分析", path: "/compare/", icon: "GitCompare" },
