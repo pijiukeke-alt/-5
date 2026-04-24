@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUp, ArrowDown } from "lucide-react";
 
 interface SortOption {
   value: string;
@@ -16,6 +16,10 @@ interface SortBarProps {
   onToggleOrder: () => void;
 }
 
+/**
+ * 排序栏组件
+ * 支持多字段排序与升降序切换
+ */
 export function SortBar({
   options,
   sortBy,
@@ -24,14 +28,14 @@ export function SortBar({
   onToggleOrder,
 }: SortBarProps) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs text-muted-foreground shrink-0">排序</span>
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-xs text-muted-foreground shrink-0 font-medium">排序</span>
       {options.map((opt) => (
         <Button
           key={opt.value}
           variant={sortBy === opt.value ? "default" : "outline"}
           size="sm"
-          className="h-7 text-xs px-2"
+          className="h-7 text-xs px-2.5 font-normal transition-all"
           onClick={() => onSortByChange(opt.value)}
         >
           {opt.label}
@@ -42,6 +46,7 @@ export function SortBar({
         size="sm"
         className="h-7 w-7 p-0"
         onClick={onToggleOrder}
+        title={sortOrder === "desc" ? "降序" : "升序"}
       >
         {sortOrder === "desc" ? (
           <ArrowDown className="h-3.5 w-3.5" />

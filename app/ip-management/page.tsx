@@ -8,8 +8,10 @@ import { SortBar } from "@/components/filters/sort-bar";
 import { TargetDetailDialog } from "@/components/detail/target-detail-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { SectionHeader, EmptyState } from "@/components/shared";
 import { useAppStore } from "@/store/app-store";
 import { MonitoringTarget } from "@/types";
+import { SlidersHorizontal } from "lucide-react";
 
 const categoryOptions = [
   { value: null, label: "全部" },
@@ -51,31 +53,32 @@ export default function IPManagementPage() {
   const filtered = getFilteredTargets();
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-bold tracking-tight">IP 库管理</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          监控对象总览：IP、艺人、合作案例的统一管理与评估（共 {filtered.length} 个）
-        </p>
-      </div>
+    <div className="space-y-4 animate-fade-in">
+      <SectionHeader
+        title="IP 库管理"
+        description={`监控对象总览：IP、艺人、合作案例的统一管理与评估（共 ${filtered.length} 个）`}
+        helpText="支持按分类、行业筛选，按综合评分、热度、风险度排序。点击卡片查看详情。"
+      />
 
       {/* 筛选栏 */}
       <div className="space-y-3">
         <SearchBar value={filters.searchQuery} onChange={setSearchQuery} />
         <div className="flex flex-col gap-2">
-          <FilterBar
-            title="分类"
-            options={categoryOptions}
-            value={filters.categoryFilter}
-            onChange={setCategoryFilter}
-          />
-          <FilterBar
-            title="行业"
-            options={industryOptions}
-            value={filters.industryFilter}
-            onChange={setIndustryFilter}
-          />
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap gap-y-2 gap-x-1">
+            <FilterBar
+              title="分类"
+              options={categoryOptions}
+              value={filters.categoryFilter}
+              onChange={setCategoryFilter}
+            />
+            <FilterBar
+              title="行业"
+              options={industryOptions}
+              value={filters.industryFilter}
+              onChange={setIndustryFilter}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-2">
             <SortBar
               options={sortOptions}
               sortBy={filters.sortBy}
@@ -83,14 +86,15 @@ export default function IPManagementPage() {
               onSortByChange={(v) => setSortBy(v as typeof filters.sortBy)}
               onToggleOrder={toggleSortOrder}
             />
-            <Button variant="ghost" size="sm" onClick={resetFilters}>
-              重置筛选
+            <Button variant="ghost" size="sm" onClick={resetFilters} className="text-xs h-8">
+              <SlidersHorizontal className="h-3.5 w-3.5 mr-1" />
+              重置
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         {filtered.map((target) => (
           <TargetCard
             key={target.id}
@@ -104,9 +108,18 @@ export default function IPManagementPage() {
       </div>
 
       {filtered.length === 0 && (
-        <Card className="bg-muted/50 border-dashed">
-          <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            未找到匹配的监控对象
+        <Card className="bg-muted/40 border-dashed">
+          <CardContent>
+            <EmptyState
+              icon="search"
+              title="未找到匹配的监控对象"
+              description="请尝试调整筛选条件或搜索关键词"
+              action={
+                <Button variant="outline" size="sm" onClick={resetFilters}>
+                  重置筛选
+                </Button>
+              }
+            />
           </CardContent>
         </Card>
       )}

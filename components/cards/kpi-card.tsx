@@ -1,47 +1,53 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DashboardKPI } from "@/types";
 
 interface KPICardProps {
   data: DashboardKPI;
+  highlight?: boolean;
 }
 
-export function KPICard({ data }: KPICardProps) {
-  const TrendIcon =
-    data.trend === "up" ? TrendingUp : data.trend === "down" ? TrendingDown : Minus;
+const trendConfig = {
+  up: { Icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-50" },
+  down: { Icon: TrendingDown, color: "text-red-500", bg: "bg-red-50" },
+  flat: { Icon: Minus, color: "text-gray-400", bg: "bg-gray-50" },
+};
+
+/**
+ * KPI 指标卡片
+ * 支持高亮状态，移动端字体自适应
+ */
+export function KPICard({ data, highlight }: KPICardProps) {
+  const { Icon, color, bg } = trendConfig[data.trend];
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+    <Card className={cn("card-elevated overflow-hidden", highlight && "ring-1 ring-primary/15")}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4 px-4">
+        <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground truncate">
           {data.title}
         </CardTitle>
-        <TrendIcon
-          className={cn(
-            "h-4 w-4",
-            data.trend === "up" && "text-green-500",
-            data.trend === "down" && "text-red-500",
-            data.trend === "flat" && "text-gray-400"
-          )}
-        />
+        <div className={cn("rounded-md p-1.5", bg)}>
+          <Icon className={cn("h-3.5 w-3.5", color)} />
+        </div>
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{data.value}</div>
-        <p className="text-xs text-muted-foreground mt-1">
+      <CardContent className="pb-4 px-4">
+        <div className="text-xl sm:text-2xl font-bold tracking-tight">{data.value}</div>
+        <p className="text-[11px] sm:text-xs text-muted-foreground mt-1 flex items-center gap-1">
           <span
             className={cn(
-              "font-medium",
-              data.change > 0 && "text-green-600",
-              data.change < 0 && "text-red-600"
+              "font-semibold",
+              data.change > 0 && "text-emerald-600",
+              data.change < 0 && "text-red-600",
+              data.change === 0 && "text-muted-foreground"
             )}
           >
             {data.change > 0 ? "+" : ""}
             {data.change}%
-          </span>{" "}
-          {data.changeLabel}
+          </span>
+          <span>{data.changeLabel}</span>
         </p>
       </CardContent>
     </Card>

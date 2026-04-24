@@ -10,12 +10,13 @@ import { SimplePieChart } from "@/components/charts/pie-chart";
 import { TrendLineChart } from "@/components/charts/line-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TargetDetailDialog } from "@/components/detail/target-detail-dialog";
+import { SectionHeader, EmptyState } from "@/components/shared";
 import { useAppStore } from "@/store/app-store";
 import { toChartData, formatNumber } from "@/lib/transform";
 import { DashboardKPI, MonitoringTarget } from "@/types";
 import { calculateEvaluationScore } from "@/lib/evaluation/scoring";
 import { RISK_COLORS } from "@/config";
-import { Flame, AlertTriangle, TrendingUp, Activity } from "lucide-react";
+import { Flame, AlertTriangle, TrendingUp, Activity, BarChart3, Award } from "lucide-react";
 
 export default function HomePage() {
   const targets = useAppStore((s) => s.targets);
@@ -32,7 +33,7 @@ export default function HomePage() {
     scores.reduce((s, sc) => s + sc.total, 0) / (scores.length || 1)
   );
 
-  // 今日热度摘要：取最近一天的热度均值
+  // 今日热度摘要
   const todayHeat = useMemo(() => {
     if (!targets[0]?.trend.heat.length) return 0;
     const lastIdx = targets[0].trend.heat.length - 1;
@@ -41,7 +42,6 @@ export default function HomePage() {
     );
   }, [targets]);
 
-  // 热度变化
   const heatChange = useMemo(() => {
     if (!targets[0]?.trend.heat.length) return 0;
     const last = targets[0].trend.heat.length - 1;
@@ -102,35 +102,30 @@ export default function HomePage() {
   const avgHeatTrend =
     targets[0]?.trend.dates.map((date, i) => ({
       date,
-      value: Math.round(
-        targets.reduce((sum, t) => sum + (t.trend.heat[i] || 0), 0) / targets.length
-      ),
+      value: Math.round(targets.reduce((sum, t) => sum + (t.trend.heat[i] || 0), 0) / targets.length),
     })) ?? [];
 
   const avgSentimentTrend =
     targets[0]?.trend.dates.map((date, i) => ({
       date,
       value: parseFloat(
-        (
-          targets.reduce((sum, t) => sum + (t.trend.sentiment[i] || 0), 0) /
-          targets.length
-        ).toFixed(2)
+        (targets.reduce((sum, t) => sum + (t.trend.sentiment[i] || 0), 0) / targets.length).toFixed(2)
       ),
     })) ?? [];
 
   const avgVolumeTrend =
     targets[0]?.trend.dates.map((date, i) => ({
       date,
-      value: Math.round(
-        targets.reduce((sum, t) => sum + (t.trend.volume[i] || 0), 0) / targets.length
-      ),
+      value: Math.round(targets.reduce((sum, t) => sum + (t.trend.volume[i] || 0), 0) / targets.length),
     })) ?? [];
 
-  const topTargets = [...targets].sort((a, b) => {
-    const sa = scores.find((s) => s.targetId === a.id)?.total ?? 0;
-    const sb = scores.find((s) => s.targetId === b.id)?.total ?? 0;
-    return sb - sa;
-  }).slice(0, 3);
+  const topTargets = [...targets]
+    .sort((a, b) => {
+      const sa = scores.find((s) => s.targetId === a.id)?.total ?? 0;
+      const sb = scores.find((s) => s.targetId === b.id)?.total ?? 0;
+      return sb - sa;
+    })
+    .slice(0, 3);
 
   const highRiskTargets = [...targets].sort((a, b) => {
     const ra = scores.find((s) => s.targetId === a.id)?.dimensions.risk ?? 0;
@@ -138,9 +133,9 @@ export default function HomePage() {
     return rb - ra;
   });
 
-  const unresolvedRiskEvents = highRiskTargets.flatMap((t) =>
-    t.riskEvents.filter((e) => !e.resolved).map((e) => ({ event: e, target: t }))
-  ).slice(0, 4);
+  const unresolvedRiskEvents = highRiskTargets
+    .flatMap((t) => t.riskEvents.filter((e) => !e.resolved).map((e) => ({ event: e, target: t })))
+    .slice(0, 4);
 
   const openDetail = (target: MonitoringTarget) => {
     setDetailTarget(target);
@@ -148,66 +143,65 @@ export default function HomePage() {
   };
 
   return (
-    <div className="space-y-5">
-      {/* 系统标题 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">IP 智鉴总览</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            IP 联名 / 授权 / 代言数据智能分析与舆情监控概览
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Activity className="h-3.5 w-3.5" />
-          数据更新于 {new Date().toLocaleDateString("zh-CN")}
-        </div>
-      </div>
+    <div className="space-y-5 animate-fade-in">
+      <SectionHeader
+        title="IP 智鉴总览"
+        description="IP 联名 / 授权 / 代言数据智能分析与舆情监控概览"
+        helpText="本页展示全库核心指标、热度趋势、评分分布与风险提醒。点击卡片可查看对象详情。"
+        action={
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Activity className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">数据更新于</span>
+            {new Date().toLocaleDateString("zh-CN")}
+          </div>
+        }
+      />
 
       {/* KPI 卡片 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpis.map((kpi) => (
-          <KPICard key={kpi.title} data={kpi} />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {kpis.map((kpi, i) => (
+          <div key={kpi.title} className={`animate-fade-in animate-fade-in-delay-${i + 1}`}>
+            <KPICard data={kpi} highlight={kpi.title === "未解决风险" && unresolvedRisks > 0} />
+          </div>
         ))}
       </div>
 
       {/* 今日热度摘要 + 综合评分概览 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+        <Card className="lg:col-span-2 card-elevated">
+          <CardHeader className="pb-2 pt-4 px-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Flame className="h-4 w-4 text-orange-500" />
                 今日热度摘要
               </CardTitle>
               <span
-                className={`text-xs font-medium ${
-                  heatChange >= 0 ? "text-green-600" : "text-red-500"
-                }`}
+                className={`text-xs font-semibold ${heatChange >= 0 ? "text-emerald-600" : "text-red-500"}`}
               >
                 {heatChange >= 0 ? "+" : ""}
                 {heatChange}% 较昨日
               </span>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-end gap-2 mb-4">
-              <span className="text-3xl font-bold">{todayHeat}</span>
-              <span className="text-sm text-muted-foreground mb-1">平均热度指数</span>
+          <CardContent className="pb-4 px-4">
+            <div className="flex items-end gap-2 mb-3">
+              <span className="text-3xl sm:text-4xl font-bold tracking-tight">{todayHeat}</span>
+              <span className="text-sm text-muted-foreground mb-1.5">平均热度指数</span>
             </div>
             <TrendLineChart data={toChartData(avgHeatTrend)} color="#f59e0b" height={180} />
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
+        <Card className="card-elevated">
+          <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-blue-500" />
               综合评分概览
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-4 px-4">
             <div className="text-center py-2">
-              <div className="text-4xl font-bold">{avgTotalScore}</div>
+              <div className="text-4xl sm:text-5xl font-bold tracking-tight">{avgTotalScore}</div>
               <div className="text-xs text-muted-foreground mt-1">全库平均综合分</div>
             </div>
             <div className="mt-4 space-y-2">
@@ -217,16 +211,16 @@ export default function HomePage() {
                 .map((s) => (
                   <div
                     key={s.targetId}
-                    className="flex items-center justify-between text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1"
+                    className="flex items-center justify-between text-sm cursor-pointer hover:bg-muted/60 rounded-lg px-2 py-1.5 transition-colors"
                     onClick={() => {
                       const t = targets.find((x) => x.id === s.targetId);
                       if (t) openDetail(t);
                     }}
                   >
-                    <span className="truncate max-w-[120px]">{s.targetName}</span>
+                    <span className="truncate max-w-[100px] sm:max-w-[120px] font-medium">{s.targetName}</span>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">{s.grade}</span>
-                      <span className="font-medium">{s.total}分</span>
+                      <span className="font-semibold tabular-nums">{s.total}分</span>
                     </div>
                   </div>
                 ))}
@@ -236,54 +230,61 @@ export default function HomePage() {
       </div>
 
       {/* 趋势摘要卡片 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+        <Card className="card-elevated">
+          <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-sm font-medium">平均声量趋势（30天）</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-4 px-4">
             <TrendLineChart data={toChartData(avgVolumeTrend)} color="#8b5cf6" />
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
+        <Card className="card-elevated">
+          <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-sm font-medium">平均情感走势（30天）</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-4 px-4">
             <TrendLineChart data={toChartData(avgSentimentTrend)} color="#3b82f6" />
           </CardContent>
         </Card>
       </div>
 
       {/* 等级分布 + 评分排行 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">综合评分排行 Top 6</CardTitle>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+        <Card className="lg:col-span-2 card-elevated">
+          <CardHeader className="pb-2 pt-4 px-4">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-purple-500" />
+              综合评分排行 Top 6
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-4 px-4">
             <SimpleBarChart data={topScoreData} color="#8b5cf6" />
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
+        <Card className="card-elevated">
+          <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-sm font-medium">等级分布</CardTitle>
           </CardHeader>
-          <CardContent>
-            <SimplePieChart data={gradePieData} />
+          <CardContent className="pb-4 px-4">
+            {gradePieData.length > 0 ? (
+              <SimplePieChart data={gradePieData} />
+            ) : (
+              <EmptyState title="暂无等级数据" description="评分计算中，请稍后查看" />
+            )}
           </CardContent>
         </Card>
       </div>
 
       {/* 风险提醒 */}
-      <Card>
-        <CardHeader className="pb-2">
+      <Card className="card-elevated border-l-4" style={{ borderLeftColor: unresolvedRisks > 0 ? RISK_COLORS.high : RISK_COLORS.low }}>
+        <CardHeader className="pb-2 pt-4 px-4">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-red-500" />
             风险提醒 ({unresolvedRisks} 个未解决)
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="pb-4 px-4 space-y-3">
           {unresolvedRiskEvents.length > 0 ? (
             unresolvedRiskEvents.map(({ event, target }) => (
               <div key={event.id} onClick={() => openDetail(target)} className="cursor-pointer">
@@ -291,30 +292,38 @@ export default function HomePage() {
               </div>
             ))
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              当前无未解决风险事件
-            </p>
+            <EmptyState
+              icon="inbox"
+              title="当前无未解决风险"
+              description="所有监控对象状态良好，暂无需要关注的风险事件"
+            />
           )}
         </CardContent>
       </Card>
 
       {/* Top 对象 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Top 3 高价值对象</CardTitle>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+        <Card className="card-elevated">
+          <CardHeader className="pb-2 pt-4 px-4">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Award className="h-4 w-4 text-amber-500" />
+              Top 3 高价值对象
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="pb-4 px-4 space-y-3">
             {topTargets.map((t) => (
               <TargetCard key={t.id} target={t} onClick={() => openDetail(t)} />
             ))}
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Top 3 高风险对象</CardTitle>
+        <Card className="card-elevated">
+          <CardHeader className="pb-2 pt-4 px-4">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              Top 3 高风险对象
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="pb-4 px-4 space-y-3">
             {highRiskTargets.slice(0, 3).map((t) => {
               const score = calculateEvaluationScore(t);
               return (
@@ -327,11 +336,7 @@ export default function HomePage() {
         </Card>
       </div>
 
-      <TargetDetailDialog
-        target={detailTarget}
-        open={detailOpen}
-        onOpenChange={setDetailOpen}
-      />
+      <TargetDetailDialog target={detailTarget} open={detailOpen} onOpenChange={setDetailOpen} />
     </div>
   );
 }

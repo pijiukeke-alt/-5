@@ -12,26 +12,29 @@ interface IPCardProps {
   ip: IPItem;
 }
 
+/**
+ * IP 卡片（旧版仪表盘专用）
+ */
 export function IPCard({ ip }: IPCardProps) {
   const score = calculateCompositeScore(ip);
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
+    <Card className="card-elevated overflow-hidden">
+      <CardContent className="p-3 sm:p-4">
         <div className="flex items-start gap-3">
-          <Avatar className="h-12 w-12">
-            <AvatarFallback className="bg-primary/10 text-primary text-lg">
+          <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
+            <AvatarFallback className="bg-primary/10 text-primary text-sm sm:text-lg font-semibold">
               {ip.name.slice(0, 1)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold text-base truncate">{ip.name}</h3>
-              <Badge variant="secondary" className="text-xs">
+              <h3 className="font-semibold text-sm sm:text-base truncate">{ip.name}</h3>
+              <Badge variant="secondary" className="text-[10px] sm:text-xs">
                 {ip.category}
               </Badge>
             </div>
-            <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
               <span>热度 {ip.heatScore}</span>
               <span>粉丝 {formatNumber(ip.followerCount)}</span>
               <span>评分 {score}</span>
@@ -43,9 +46,9 @@ export function IPCard({ ip }: IPCardProps) {
                 </Badge>
               ))}
               <span
-                className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full"
+                className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full"
                 style={{
-                  backgroundColor: RISK_COLORS[ip.riskLevel] + "20",
+                  backgroundColor: RISK_COLORS[ip.riskLevel] + "15",
                   color: RISK_COLORS[ip.riskLevel],
                 }}
               >

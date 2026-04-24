@@ -18,6 +18,7 @@ import { calculateEvaluationScore } from "@/lib/evaluation/scoring";
 import { toChartData, formatNumber } from "@/lib/transform";
 import { hotContents } from "@/data/mock/opinion-extra";
 import { cn } from "@/lib/utils";
+import { categoryLabel, industryLabel, sentimentLabel } from "@/lib/labels";
 import {
   User,
   Briefcase,
@@ -34,27 +35,10 @@ interface TargetDetailDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const categoryLabel: Record<string, string> = {
-  ip: "IP",
-  celebrity: "艺人",
-  cooperation: "合作",
-};
-
-const industryLabel: Record<string, string> = {
-  beauty: "美妆",
-  food: "食品饮料",
-  "3c": "3C数码",
-  toy: "潮玩",
-  fashion: "服饰",
-  travel: "文旅",
-};
-
-const sentimentLabel = {
-  positive: { text: "正面", class: "bg-green-50 text-green-700 border-green-200" },
-  neutral: { text: "中性", class: "bg-gray-50 text-gray-700 border-gray-200" },
-  negative: { text: "负面", class: "bg-red-50 text-red-700 border-red-200" },
-};
-
+/**
+ * 监控对象详情弹窗
+ * 展示基础信息、评分明细、趋势图表、历史合作与风险
+ */
 export function TargetDetailDialog({
   target,
   open,
@@ -79,28 +63,27 @@ export function TargetDetailDialog({
     value: target.trend.volume[i],
   }));
 
-  // 关联的舆情内容
   const relatedContents = hotContents.filter(
     (c) => c.relatedTarget === target.id
   );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        <DialogHeader className="p-5 pb-3 sticky top-0 bg-background/95 backdrop-blur-sm z-10 border-b">
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarFallback className="bg-primary/10 text-primary">
+              <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                 {target.name.slice(0, 1)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <div className="text-lg">{target.name}</div>
+              <div className="text-base sm:text-lg font-semibold">{target.name}</div>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-[10px]">
                   {categoryLabel[target.category]}
                 </Badge>
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-[10px]">
                   {industryLabel[target.industry]}
                 </Badge>
               </div>
@@ -108,59 +91,41 @@ export function TargetDetailDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 mt-4">
+        <div className="space-y-4 p-5 pt-4">
           {/* 基础信息 */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs flex items-center gap-1.5">
+          <Card className="card-elevated">
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-xs flex items-center gap-1.5 font-medium">
                 <User className="h-3.5 w-3.5" />
                 基础信息
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{target.description}</p>
-              <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                <div className="rounded-lg bg-muted/50 p-2">
-                  <div className="text-xs text-muted-foreground">声量</div>
-                  <div className="font-medium">{formatNumber(target.social.volume)}</div>
-                </div>
-                <div className="rounded-lg bg-muted/50 p-2">
-                  <div className="text-xs text-muted-foreground">曝光</div>
-                  <div className="font-medium">{formatNumber(target.social.exposure)}</div>
-                </div>
-                <div className="rounded-lg bg-muted/50 p-2">
-                  <div className="text-xs text-muted-foreground">互动</div>
-                  <div className="font-medium">{formatNumber(target.social.engagement)}</div>
-                </div>
-                <div className="rounded-lg bg-muted/50 p-2">
-                  <div className="text-xs text-muted-foreground">热度</div>
-                  <div className="font-medium">{target.social.heatScore}</div>
-                </div>
+            <CardContent className="pb-4 px-4">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {target.description}
+              </p>
+              <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 text-sm">
+                <MetricItem label="声量" value={formatNumber(target.social.volume)} />
+                <MetricItem label="曝光" value={formatNumber(target.social.exposure)} />
+                <MetricItem label="互动" value={formatNumber(target.social.engagement)} />
+                <MetricItem label="热度" value={target.social.heatScore} />
                 {target.social.followers && (
-                  <div className="rounded-lg bg-muted/50 p-2">
-                    <div className="text-xs text-muted-foreground">粉丝</div>
-                    <div className="font-medium">
-                      {formatNumber(target.social.followers)}
-                    </div>
-                  </div>
+                  <MetricItem label="粉丝" value={formatNumber(target.social.followers)} />
                 )}
-                <div className="rounded-lg bg-muted/50 p-2">
-                  <div className="text-xs text-muted-foreground">媒体数</div>
-                  <div className="font-medium">{target.social.mediaCount}</div>
-                </div>
+                <MetricItem label="媒体数" value={target.social.mediaCount} />
               </div>
             </CardContent>
           </Card>
 
           {/* 评分明细 */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs flex items-center gap-1.5">
+          <Card className="card-elevated">
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-xs flex items-center gap-1.5 font-medium">
                 <Award className="h-3.5 w-3.5" />
                 评分明细
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pb-4 px-4">
               <ScoreCard score={score} />
               <div className="mt-3">
                 <SimpleRadarChart
@@ -174,7 +139,7 @@ export function TargetDetailDialog({
                         score.dimensions.reputation,
                         score.dimensions.risk,
                       ],
-                      color: "#3b82f6",
+                      color: "#2563eb",
                       fillOpacity: 0.3,
                     },
                   ]}
@@ -185,64 +150,37 @@ export function TargetDetailDialog({
           </Card>
 
           {/* 趋势图表 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs flex items-center gap-1.5">
-                  <TrendingUp className="h-3.5 w-3.5 text-orange-500" />
-                  热度趋势
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TrendLineChart
-                  data={toChartData(heatTrend)}
-                  color="#f59e0b"
-                  height={160}
-                />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs flex items-center gap-1.5">
-                  <MessageSquare className="h-3.5 w-3.5 text-blue-500" />
-                  情感走势
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TrendLineChart
-                  data={toChartData(sentimentTrend)}
-                  color="#3b82f6"
-                  height={160}
-                />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs flex items-center gap-1.5">
-                  <BarChart3 className="h-3.5 w-3.5 text-purple-500" />
-                  声量趋势
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TrendLineChart
-                  data={toChartData(volumeTrend)}
-                  color="#8b5cf6"
-                  height={160}
-                />
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <TrendCard
+              title="热度趋势"
+              icon={<TrendingUp className="h-3.5 w-3.5 text-orange-500" />}
+              data={toChartData(heatTrend)}
+              color="#f59e0b"
+            />
+            <TrendCard
+              title="情感走势"
+              icon={<MessageSquare className="h-3.5 w-3.5 text-blue-500" />}
+              data={toChartData(sentimentTrend)}
+              color="#3b82f6"
+            />
+            <TrendCard
+              title="声量趋势"
+              icon={<BarChart3 className="h-3.5 w-3.5 text-purple-500" />}
+              data={toChartData(volumeTrend)}
+              color="#8b5cf6"
+            />
           </div>
 
           {/* 历史合作摘要 */}
           {target.cooperationHistory.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs flex items-center gap-1.5">
+            <Card className="card-elevated">
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-xs flex items-center gap-1.5 font-medium">
                   <Briefcase className="h-3.5 w-3.5" />
                   历史合作摘要
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="pb-4 px-4 space-y-2">
                 {target.cooperationHistory.map((h, i) => (
                   <div
                     key={i}
@@ -255,13 +193,13 @@ export function TargetDetailDialog({
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="w-12 sm:w-16 h-1.5 rounded-full bg-muted overflow-hidden">
                         <div
                           className="h-full rounded-full bg-primary"
                           style={{ width: `${h.effectScore}%` }}
                         />
                       </div>
-                      <div className="text-sm font-medium w-8 text-right">
+                      <div className="text-sm font-semibold w-8 text-right">
                         {h.effectScore}分
                       </div>
                     </div>
@@ -273,18 +211,18 @@ export function TargetDetailDialog({
 
           {/* 舆情摘要 */}
           {relatedContents.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs flex items-center gap-1.5">
+            <Card className="card-elevated">
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-xs flex items-center gap-1.5 font-medium">
                   <MessageSquare className="h-3.5 w-3.5 text-blue-500" />
                   舆情摘要
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="pb-4 px-4 space-y-2">
                 {relatedContents.map((content) => (
                   <div
                     key={content.id}
-                    className="rounded-lg border p-3 hover:shadow-sm transition-shadow"
+                    className="rounded-xl border p-3 hover:shadow-sm transition-shadow"
                   >
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="font-medium text-sm">{content.title}</h4>
@@ -314,14 +252,14 @@ export function TargetDetailDialog({
 
           {/* 风险标签 */}
           {target.riskEvents.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs flex items-center gap-1.5">
+            <Card className="card-elevated">
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-xs flex items-center gap-1.5 font-medium">
                   <ShieldAlert className="h-3.5 w-3.5 text-red-500" />
                   风险标签
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="pb-4 px-4 space-y-2">
                 {target.riskEvents.map((e) => (
                   <RiskCard key={e.id} event={e} />
                 ))}
@@ -331,5 +269,40 @@ export function TargetDetailDialog({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function MetricItem({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-lg bg-muted/50 p-2">
+      <div className="text-[10px] text-muted-foreground">{label}</div>
+      <div className="font-semibold text-sm">{value}</div>
+    </div>
+  );
+}
+
+function TrendCard({
+  title,
+  icon,
+  data,
+  color,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  data: { name: string; value: number }[];
+  color: string;
+}) {
+  return (
+    <Card className="card-elevated">
+      <CardHeader className="pb-2 pt-3 px-3">
+        <CardTitle className="text-[11px] flex items-center gap-1.5 font-medium">
+          {icon}
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pb-3 px-3">
+        <TrendLineChart data={data} color={color} height={140} />
+      </CardContent>
+    </Card>
   );
 }
