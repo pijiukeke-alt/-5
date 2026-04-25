@@ -89,6 +89,48 @@ export interface NavItem {
 }
 
 // ============================================================
+// P0: API & Alert Types
+// ============================================================
+
+export interface ApiResponse<T> {
+  code: number;
+  data: T;
+  message?: string;
+}
+
+export interface PaginatedResult<T> {
+  list: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export type AlertSeverity = "info" | "warning" | "critical";
+
+export interface AlertRule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  metric: "sentiment" | "volume" | "riskKeywords" | "competitor";
+  operator: "gt" | "lt" | "eq" | "changeRate";
+  threshold: number;
+  timeWindowMinutes: number;
+  severity: AlertSeverity;
+  notifyChannels: string[];
+}
+
+export interface AlertEvent {
+  id: string;
+  ruleId: string;
+  triggeredAt: string;
+  metricValue: number;
+  severity: AlertSeverity;
+  message: string;
+  relatedIPs: string[];
+  acknowledged: boolean;
+}
+
+// ============================================================
 // MVP 核心数据类型（数据层 + 评分层）
 // ============================================================
 

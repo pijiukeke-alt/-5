@@ -1,30 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SimpleRadarChart } from "@/components/charts/radar-chart";
 import { TrendLineChart } from "@/components/charts/line-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SectionHeader, DemoSwitcher, EmptyState } from "@/components/shared";
+import { PageSkeleton } from "@/components/loading/page-skeleton";
 import { useAppStore } from "@/store/app-store";
 import { calculateEvaluationScore } from "@/lib/evaluation/scoring";
-import { getAllScores } from "@/lib/evaluation/api";
 import { EVALUATION_CONFIG } from "@/config";
 import { toChartData } from "@/lib/transform";
 import { TargetDetailDialog } from "@/components/detail/target-detail-dialog";
 import { MonitoringTarget } from "@/types";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { Trophy, TrendingUp, ShieldAlert, Info, Award } from "lucide-react";
 import { dimLabel, dimColors, gradeStyle } from "@/lib/labels";
 
 export default function EvaluationPage() {
+  const initialized = useAppStore((s) => s.initialized);
+  const loading = useAppStore((s) => s.loading);
+  const error = useAppStore((s) => s.error);
   const targets = useAppStore((s) => s.targets);
   const [selectedId, setSelectedId] = useState<string>(targets[0]?.id ?? "");
   const [detailTarget, setDetailTarget] = useState<MonitoringTarget | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
+  useEffect(() => {
+    if (!selectedId && targets.length > 0) {
+      setSelectedId(targets[0].id);
+    }
+  }, [targets, selectedId]);
+
+  if (!initialized || loading) {
+    return <PageSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <EmptyState
+        icon="alert"
+        title="数据加载失败"
+        description={error}
+        action={
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            刷新页面
+          </Button>
+        }
+      />
+    );
+  }
+
   const target = targets.find((t) => t.id === selectedId);
   const score = target ? calculateEvaluationScore(target) : null;
-  const allScores = getAllScores().sort((a, b) => b.total - a.total);
+  const allScores = targets
+    .map((t) => calculateEvaluationScore(t))
+    .sort((a, b) => b.total - a.total);
 
   // 4维平均分
   const avgDims = {

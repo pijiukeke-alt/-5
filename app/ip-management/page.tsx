@@ -9,6 +9,7 @@ import { TargetDetailDialog } from "@/components/detail/target-detail-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SectionHeader, EmptyState } from "@/components/shared";
+import { PageSkeleton } from "@/components/loading/page-skeleton";
 import { useAppStore } from "@/store/app-store";
 import { MonitoringTarget } from "@/types";
 import { SlidersHorizontal } from "lucide-react";
@@ -38,6 +39,9 @@ const sortOptions = [
 ];
 
 export default function IPManagementPage() {
+  const initialized = useAppStore((s) => s.initialized);
+  const loading = useAppStore((s) => s.loading);
+  const error = useAppStore((s) => s.error);
   const filters = useAppStore((s) => s.filters);
   const setCategoryFilter = useAppStore((s) => s.setCategoryFilter);
   const setIndustryFilter = useAppStore((s) => s.setIndustryFilter);
@@ -49,6 +53,25 @@ export default function IPManagementPage() {
 
   const [detailTarget, setDetailTarget] = useState<MonitoringTarget | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+
+  if (!initialized || loading) {
+    return <PageSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <EmptyState
+        icon="alert"
+        title="数据加载失败"
+        description={error}
+        action={
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            刷新页面
+          </Button>
+        }
+      />
+    );
+  }
 
   const filtered = getFilteredTargets();
 

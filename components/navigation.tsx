@@ -12,10 +12,12 @@ import {
   Eye,
   Handshake,
   GitCompare,
+  Bell,
   Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAppStore } from "@/store/app-store";
 
 const iconMap: Record<string, React.ReactNode> = {
   LayoutDashboard: <LayoutDashboard className="h-5 w-5" />,
@@ -24,6 +26,7 @@ const iconMap: Record<string, React.ReactNode> = {
   Eye: <Eye className="h-5 w-5" />,
   Handshake: <Handshake className="h-5 w-5" />,
   GitCompare: <GitCompare className="h-5 w-5" />,
+  Bell: <Bell className="h-5 w-5" />,
 };
 
 /**
@@ -34,6 +37,7 @@ const iconMap: Record<string, React.ReactNode> = {
 export function Navigation() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const unreadCount = useAppStore((s) => s.unreadCount);
 
   const navContent = (
     <nav className="flex flex-col gap-1">
@@ -53,6 +57,11 @@ export function Navigation() {
           >
             {iconMap[item.icon]}
             {item.title}
+            {item.icon === "Bell" && unreadCount > 0 && (
+              <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                {unreadCount}
+              </span>
+            )}
           </Link>
         );
       })}
@@ -106,11 +115,18 @@ export function Navigation() {
               key={item.path}
               href={item.path}
               className={cn(
-                "flex flex-col items-center gap-0.5 py-1.5 px-2 min-w-[48px]",
+                "relative flex flex-col items-center gap-0.5 py-1.5 px-2 min-w-[48px]",
                 isActive ? "text-primary" : "text-muted-foreground"
               )}
             >
-              {iconMap[item.icon]}
+              <span className="relative">
+                {iconMap[item.icon]}
+                {item.icon === "Bell" && unreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                    {unreadCount}
+                  </span>
+                )}
+              </span>
               <span className="text-[10px] font-medium">{item.title}</span>
             </Link>
           );

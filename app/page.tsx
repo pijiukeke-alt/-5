@@ -11,18 +11,42 @@ import { TrendLineChart } from "@/components/charts/line-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TargetDetailDialog } from "@/components/detail/target-detail-dialog";
 import { SectionHeader, EmptyState } from "@/components/shared";
+import { PageSkeleton } from "@/components/loading/page-skeleton";
 import { useAppStore } from "@/store/app-store";
 import { toChartData, formatNumber } from "@/lib/transform";
 import { DashboardKPI, MonitoringTarget } from "@/types";
 import { calculateEvaluationScore } from "@/lib/evaluation/scoring";
 import { RISK_COLORS } from "@/config";
+import { Button } from "@/components/ui/button";
 import { Flame, AlertTriangle, TrendingUp, Activity, BarChart3, Award } from "lucide-react";
 
 export default function HomePage() {
+  const initialized = useAppStore((s) => s.initialized);
+  const loading = useAppStore((s) => s.loading);
+  const error = useAppStore((s) => s.error);
   const targets = useAppStore((s) => s.targets);
   const scores = useAppStore((s) => s.scores);
   const [detailTarget, setDetailTarget] = useState<MonitoringTarget | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+
+  if (!initialized || loading) {
+    return <PageSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <EmptyState
+        icon="alert"
+        title="数据加载失败"
+        description={error}
+        action={
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            刷新页面
+          </Button>
+        }
+      />
+    );
+  }
 
   const ongoingCooperation = targets.filter((t) => t.category === "cooperation").length;
   const unresolvedRisks = targets.reduce(

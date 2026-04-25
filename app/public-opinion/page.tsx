@@ -8,6 +8,7 @@ import { FilterBar } from "@/components/filters/filter-bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SectionHeader, DemoSwitcher, EmptyState } from "@/components/shared";
+import { PageSkeleton } from "@/components/loading/page-skeleton";
 import { useAppStore } from "@/store/app-store";
 import { toChartData } from "@/lib/transform";
 import { SENTIMENT_COLORS, RISK_COLORS } from "@/config";
@@ -15,6 +16,7 @@ import { hotKeywords, hotContents, platformShares } from "@/data/mock/opinion-ex
 import { TargetDetailDialog } from "@/components/detail/target-detail-dialog";
 import { MonitoringTarget } from "@/types";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   TrendingUp,
   TrendingDown,
@@ -40,6 +42,9 @@ const timeOptions = [
 ];
 
 export default function PublicOpinionPage() {
+  const initialized = useAppStore((s) => s.initialized);
+  const loading = useAppStore((s) => s.loading);
+  const error = useAppStore((s) => s.error);
   const filters = useAppStore((s) => s.filters);
   const setRiskSeverityFilter = useAppStore((s) => s.setRiskSeverityFilter);
   const getFilteredRiskEvents = useAppStore((s) => s.getFilteredRiskEvents);
@@ -50,6 +55,25 @@ export default function PublicOpinionPage() {
   const [platformFilter, setPlatformFilter] = useState<string | null>(null);
   const [detailTarget, setDetailTarget] = useState<MonitoringTarget | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+
+  if (!initialized || loading) {
+    return <PageSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <EmptyState
+        icon="alert"
+        title="数据加载失败"
+        description={error}
+        action={
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            刷新页面
+          </Button>
+        }
+      />
+    );
+  }
 
   const selectedTarget = selectedTargetId
     ? targets.find((t) => t.id === selectedTargetId)

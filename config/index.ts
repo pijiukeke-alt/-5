@@ -10,7 +10,14 @@ export const NAV_ITEMS: NavItem[] = [
   { title: "舆情监控", path: "/public-opinion/", icon: "Eye" },
   { title: "合作评估", path: "/cooperation/", icon: "Handshake" },
   { title: "对比分析", path: "/compare/", icon: "GitCompare" },
+  { title: "预警中心", path: "/alerts/", icon: "Bell" },
 ];
+
+export const API_CONFIG = {
+  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api",
+  timeout: 30000,
+  mockMode: process.env.NEXT_PUBLIC_DATA_MODE === "mock" || !process.env.NEXT_PUBLIC_DATA_MODE,
+};
 
 export const DEFAULT_PAGE_SIZE = 10;
 

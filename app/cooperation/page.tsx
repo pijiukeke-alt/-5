@@ -7,9 +7,11 @@ import { FilterBar } from "@/components/filters/filter-bar";
 import { TargetDetailDialog } from "@/components/detail/target-detail-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionHeader, EmptyState } from "@/components/shared";
+import { PageSkeleton } from "@/components/loading/page-skeleton";
 import { useAppStore } from "@/store/app-store";
 import { calculateEvaluationScore } from "@/lib/evaluation/scoring";
 import { MonitoringTarget } from "@/types";
+import { Button } from "@/components/ui/button";
 import { Briefcase } from "lucide-react";
 
 const gradeOptions = [
@@ -22,10 +24,32 @@ const gradeOptions = [
 ];
 
 export default function CooperationPage() {
+  const initialized = useAppStore((s) => s.initialized);
+  const loading = useAppStore((s) => s.loading);
+  const error = useAppStore((s) => s.error);
   const targets = useAppStore((s) => s.targets);
   const [gradeFilter, setGradeFilter] = useState<string | null>(null);
   const [detailTarget, setDetailTarget] = useState<MonitoringTarget | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+
+  if (!initialized || loading) {
+    return <PageSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <EmptyState
+        icon="alert"
+        title="数据加载失败"
+        description={error}
+        action={
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            刷新页面
+          </Button>
+        }
+      />
+    );
+  }
 
   let cooperationTargets = targets.filter((t) => t.category === "cooperation");
 

@@ -9,13 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SectionHeader, EmptyState } from "@/components/shared";
+import { PageSkeleton } from "@/components/loading/page-skeleton";
 import { useAppStore } from "@/store/app-store";
-import { buildCompareResult } from "@/lib/evaluation/api";
 import { calculateEvaluationScore } from "@/lib/evaluation/scoring";
 import { cn } from "@/lib/utils";
 import { dimLabel } from "@/lib/labels";
 import { TargetDetailDialog } from "@/components/detail/target-detail-dialog";
-import { MonitoringTarget } from "@/types";
+import { MonitoringTarget, EvaluationScore } from "@/types";
 import {
   GitCompare,
   Trophy,
@@ -27,18 +27,82 @@ import {
   X,
 } from "lucide-react";
 
+interface LocalCompareResult {
+  targets: MonitoringTarget[];
+  scores: EvaluationScore[];
+  dimensionDiffs: Record<string, Record<string, number>>;
+  winnerId: string | null;
+}
+
+function buildLocalCompareResult(
+  allTargets: MonitoringTarget[],
+  targetIds: string[]
+): LocalCompareResult {
+  const targets = targetIds
+    .map((id) => allTargets.find((t) => t.id === id))
+    .filter(Boolean) as MonitoringTarget[];
+
+  const scores = targets.map((t) => calculateEvaluationScore(t));
+
+  const dimensionKeys = ["communication", "commercial", "reputation", "risk"] as const;
+  const dimensionDiffs: Record<string, Record<string, number>> = {};
+
+  dimensionKeys.forEach((dim) => {
+    const values = scores.map((s) => ({
+      id: s.targetId,
+      value: s.dimensions[dim],
+    }));
+    const max = Math.max(...values.map((v) => v.value));
+
+    const diffs: Record<string, number> = {};
+    values.forEach((v) => {
+      diffs[v.id] = max > 0 ? Math.round(((v.value - max) / max) * 100) : 0;
+    });
+    dimensionDiffs[dim] = diffs;
+  });
+
+  const winnerId =
+    scores.length > 0
+      ? scores.reduce((best, curr) => (curr.total > best.total ? curr : best)).targetId
+      : null;
+
+  return { targets, scores, dimensionDiffs, winnerId };
+}
+
 export default function ComparePage() {
+  const initialized = useAppStore((s) => s.initialized);
+  const loading = useAppStore((s) => s.loading);
+  const error = useAppStore((s) => s.error);
   const targets = useAppStore((s) => s.targets);
   const selectedIds = useAppStore((s) => s.selectedCompareIds);
   const toggleCompareId = useAppStore((s) => s.toggleCompareId);
   const clearCompareIds = useAppStore((s) => s.clearCompareIds);
-  const [compareResult, setCompareResult] = useState<ReturnType<typeof buildCompareResult> | null>(null);
+  const [compareResult, setCompareResult] = useState<LocalCompareResult | null>(null);
   const [detailTarget, setDetailTarget] = useState<MonitoringTarget | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
+  if (!initialized || loading) {
+    return <PageSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <EmptyState
+        icon="alert"
+        title="数据加载失败"
+        description={error}
+        action={
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            刷新页面
+          </Button>
+        }
+      />
+    );
+  }
+
   const handleCompare = () => {
     if (selectedIds.length >= 2) {
-      setCompareResult(buildCompareResult(selectedIds));
+      setCompareResult(buildLocalCompareResult(targets, selectedIds));
     }
   };
 
