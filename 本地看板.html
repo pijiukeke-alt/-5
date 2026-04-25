@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP 智鉴 — 本地功能看板</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:16px}
+header{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);color:#fff;padding:32px 16px;border-radius:16px;margin-bottom:24px;box-shadow:0 10px 25px -5px rgba(0,0,0,.15)}
+header h1{font-size:28px;font-weight:700;letter-spacing:-.5px}
+header p{margin-top:8px;opacity:.85;font-size:14px}
+header .meta{display:flex;gap:16px;margin-top:16px;flex-wrap:wrap}
+header .meta span{background:rgba(255,255,255,.12);padding:4px 12px;border-radius:20px;font-size:12px}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px}
+@media(min-width:768px){.kpi-grid{grid-template-columns:repeat(4,1fr)}}
+.kpi-card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #e2e8f0}
+.kpi-card .label{font-size:12px;color:#64748b;margin-bottom:4px}
+.kpi-card .value{font-size:24px;font-weight:700;color:#0f172a}
+.kpi-card .sub{font-size:11px;color:#94a3b8;margin-top:2px}
+
+.section{background:#fff;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #e2e8f0}
+.section h2{font-size:16px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section h2::before{content:'';display:block;width:4px;height:16px;background:#2563eb;border-radius:2px}
+
+.nav-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:640px){.nav-grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1024px){.nav-grid{grid-template-columns:repeat(4,1fr)}}
+.nav-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;text-decoration:none;color:inherit;transition:all .15s}
+.nav-card:hover{border-color:#2563eb;background:#eff6ff}
+.nav-card .title{font-weight:600;font-size:13px;color:#0f172a}
+.nav-card .desc{font-size:11px;color:#64748b;margin-top:4px}
+
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:10px 8px;background:#f1f5f9;font-weight:600;color:#475569;white-space:nowrap}
+td{padding:10px 8px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
+tr:hover td{background:#f8fafc}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-ip{background:#dbeafe;color:#1d4ed8}
+.badge-celeb{background:#dcfce7;color:#15803d}
+.badge-coop{background:#fef3c7;color:#b45309}
+.badge-s{background:#fef3c7;color:#b45309}
+.badge-a{background:#dcfce7;color:#15803d}
+.badge-b{background:#dbeafe;color:#1d4ed8}
+.badge-c{background:#f1f5f9;color:#475569}
+.badge-d{background:#fee2e2;color:#b91c1c}
+.badge-low{background:#dcfce7;color:#15803d}
+.badge-medium{background:#fef3c7;color:#b45309}
+.badge-high{background:#fee2e2;color:#b91c1c}
+.badge-critical{background:#7f1d1d;color:#fff}
+
+.progress{height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;min-width:60px}
+.progress-bar{height:100%;border-radius:3px}
+.score{font-weight:700;font-size:13px}
+
+.risk-list{display:flex;flex-direction:column;gap:8px}
+.risk-item{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;font-size:12px}
+.risk-item .title{font-weight:600;color:#991b1b;margin-bottom:2px}
+.risk-item .desc{color:#7f1d1d;opacity:.9}
+.risk-item .meta{display:flex;gap:8px;margin-top:4px;font-size:11px;color:#b91c1c}
+
+.alert-grid{display:grid;grid-template-columns:1fr;gap:8px}
+@media(min-width:640px){.alert-grid{grid-template-columns:repeat(2,1fr)}}
+.alert-card{border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:12px}
+.alert-card.critical{background:#fef2f2;border-color:#fecaca}
+.alert-card.warning{background:#fffbeb;border-color:#fde68a}
+.alert-card.info{background:#eff6ff;border-color:#bfdbfe}
+.alert-card .title{font-weight:600;margin-bottom:4px}
+.alert-card .msg{color:#334155}
+
+.action-bar{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.action-bar .hint{font-size:12px;color:#64748b}
+.btn{background:#0f172a;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;text-decoration:none;display:inline-block}
+.btn:hover{background:#1e293b}
+.btn-outline{background:#fff;color:#0f172a;border:1px solid #cbd5e1}
+.btn-outline:hover{background:#f8fafc}
+
+.tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
+.tab{background:#f1f5f9;border:none;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;color:#475569}
+.tab.active{background:#0f172a;color:#fff}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+.footer{text-align:center;padding:24px 0;font-size:12px;color:#94a3b8}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>IP 智鉴</h1>
+  <p>IP 联名 / 授权 / 代言数据智能分析与舆情监控系统 — 本地功能看板</p>
+  <div class="meta">
+    <span>12 个监控对象</span>
+    <span>4 维评估模型</span>
+    <span>4 条预警规则</span>
+    <span>7 个功能页面</span>
+  </div>
+</header>
+
+<div class="action-bar">
+  <span class="hint">如需完整交互体验，请启动本地服务器：</span>
+  <a class="btn" href="#" onclick="startServer()">一键启动服务器</a>
+  <a class="btn btn-outline" href="本地看板.md">查看 Markdown 文档</a>
+  <span class="hint" id="server-status" style="margin-left:auto"></span>
+</div>
+
+<div class="kpi-grid" id="kpi-grid"></div>
+
+<div class="section">
+  <h2>页面导航</h2>
+  <div class="nav-grid">
+    <a class="nav-card" href="out/index.html" target="_blank">
+      <div class="title">首页总览</div>
+      <div class="desc">KPI、趋势图、评分排行、风险提醒</div>
+    </a>
+    <a class="nav-card" href="out/ip-management/index.html" target="_blank">
+      <div class="title">IP 库管理</div>
+      <div class="desc">筛选、搜索、排序、卡片列表</div>
+    </a>
+    <a class="nav-card" href="out/data-analysis/index.html" target="_blank">
+      <div class="title">价值评估</div>
+      <div class="desc">雷达图、维度得分、历史趋势</div>
+    </a>
+    <a class="nav-card" href="out/public-opinion/index.html" target="_blank">
+      <div class="title">舆情监控</div>
+      <div class="desc">声量/热度/情感趋势、风险事件</div>
+    </a>
+    <a class="nav-card" href="out/compare/index.html" target="_blank">
+      <div class="title">对比分析</div>
+      <div class="desc">多选对比、雷达叠加、自动结论</div>
+    </a>
+    <a class="nav-card" href="out/cooperation/index.html" target="_blank">
+      <div class="title">合作评估</div>
+      <div class="desc">等级筛选、案例卡片、平均分</div>
+    </a>
+    <a class="nav-card" href="out/alerts/index.html" target="_blank">
+      <div class="title">预警中心</div>
+      <div class="desc">严重度筛选、已读标记、一键清空</div>
+    </a>
+    <a class="nav-card" href="https://github.com/pijiukeke-alt/-5" target="_blank">
+      <div class="title">GitHub 仓库</div>
+      <div class="desc">查看源码与提交记录</div>
+    </a>
+  </div>
+</div>
+
+<div class="section">
+  <h2>监控对象总览</h2>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(this,'tab-all')">全部</button>
+    <button class="tab" onclick="switchTab(this,'tab-ip')">IP</button>
+    <button class="tab" onclick="switchTab(this,'tab-celeb')">艺人</button>
+    <button class="tab" onclick="switchTab(this,'tab-coop')">合作</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>名称</th><th>分类</th><th>行业</th><th>热度</th><th>传播力</th><th>商业力</th><th>口碑力</th><th>风险度</th><th>总分</th><th>等级</th><th>风险事件</th></tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <h2>评分排行</h2>
+  <div id="ranking-body"></div>
+</div>
+
+<div class="section">
+  <h2>风险事件</h2>
+  <div class="risk-list" id="risk-body"></div>
+</div>
+
+<div class="section">
+  <h2>预警事件</h2>
+  <div class="alert-grid" id="alert-body"></div>
+</div>
+
+<div class="footer">
+  IP 智鉴 v0.1.0 · 本地静态看板 · 生成于 2026-04-25
+</div>
+
+</div>
+
+<script>
+const targets = [
+  {id:"tgt-001",name:"熊猫阿宝",category:"ip",industry:"toy",social:{volume:45000,exposure:1200000,engagement:180000,heatScore:92,followers:28000000,mediaCount:3400},sentiment:{positiveRatio:.75,neutralRatio:.2,negativeRatio:.05,stabilityScore:82,avgCommentRating:4.5},business:{salesLift:35,gmv:120000000,conversionRate:.085,avgOrderValue:89,roi:3.2},riskEvents:[],cooperationHistory:[{brandName:"茶颜悦色",effectScore:88},{brandName:"肯德基",effectScore:85},{brandName:"安踏儿童",effectScore:82}]},
+  {id:"tgt-002",name:"星际游侠",category:"ip",industry:"3c",social:{volume:28000,exposure:720000,engagement:95000,heatScore:78,followers:15000000,mediaCount:2100},sentiment:{positiveRatio:.6,neutralRatio:.25,negativeRatio:.15,stabilityScore:58,avgCommentRating:3.8},business:{salesLift:18,gmv:60000000,conversionRate:.052,avgOrderValue:320,roi:2.1},riskEvents:[{id:"risk-002-1",title:"联名外设定价过高引发玩家不满",date:"2024-02-15",severity:"medium",category:"negative_opinion",description:"玩家认为联名键盘鼠标套装定价较普通款溢价80%",resolved:false}],cooperationHistory:[{brandName:"雷蛇",effectScore:72},{brandName:"ROG",effectScore:80}]},
+  {id:"tgt-003",name:"青瓷物语",category:"ip",industry:"travel",social:{volume:8500,exposure:210000,engagement:28000,heatScore:58,followers:3200000,mediaCount:680},sentiment:{positiveRatio:.45,neutralRatio:.3,negativeRatio:.25,stabilityScore:42,avgCommentRating:3.2},business:{salesLift:8,gmv:12000000,conversionRate:.032,avgOrderValue:158,roi:1.4},riskEvents:[{id:"risk-003-1",title:"联名设计被质疑文化挪用",date:"2024-07-22",severity:"high",category:"controversy",description:"小红书出现多篇笔记质疑某茶饮联名未能准确传达非遗文化内涵",resolved:false}],cooperationHistory:[{brandName:"喜茶",effectScore:45},{brandName:"故宫文创",effectScore:78}]},
+  {id:"tgt-004",name:"魔法少女小圆",category:"ip",industry:"beauty",social:{volume:52000,exposure:1500000,engagement:260000,heatScore:91,followers:21000000,mediaCount:4200},sentiment:{positiveRatio:.78,neutralRatio:.18,negativeRatio:.04,stabilityScore:85,avgCommentRating:4.6},business:{salesLift:42,gmv:180000000,conversionRate:.095,avgOrderValue:128,roi:3.8},riskEvents:[],cooperationHistory:[{brandName:"花西子",effectScore:91},{brandName:"完美日记",effectScore:86}]},
+  {id:"tgt-005",name:"林小夏",category:"celebrity",industry:"beauty",social:{volume:38000,exposure:980000,engagement:210000,heatScore:89,followers:12000000,mediaCount:2900},sentiment:{positiveRatio:.82,neutralRatio:.14,negativeRatio:.04,stabilityScore:88,avgCommentRating:4.7},business:{salesLift:28,gmv:250000000,conversionRate:.068,avgOrderValue:420,roi:4.5},riskEvents:[],cooperationHistory:[{brandName:"兰蔻",effectScore:92},{brandName:"周大福",effectScore:85},{brandName:"FILA",effectScore:80}]},
+  {id:"tgt-006",name:"张浩然",category:"celebrity",industry:"3c",social:{volume:22000,exposure:580000,engagement:78000,heatScore:72,followers:8500000,mediaCount:1600},sentiment:{positiveRatio:.58,neutralRatio:.28,negativeRatio:.14,stabilityScore:55,avgCommentRating:3.6},business:{salesLift:15,gmv:45000000,conversionRate:.045,avgOrderValue:580,roi:2.0},riskEvents:[{id:"risk-006-1",title:"代言品牌夸大宣传用词被点名",date:"2024-01-10",severity:"medium",category:"legal",description:"代言的某智能音箱品牌广告中使用了极限词",resolved:true}],cooperationHistory:[{brandName:"小米",effectScore:75},{brandName:"一加",effectScore:70}]},
+  {id:"tgt-007",name:"苏悦",category:"celebrity",industry:"food",social:{volume:31000,exposure:860000,engagement:165000,heatScore:81,followers:9500000,mediaCount:2400},sentiment:{positiveRatio:.72,neutralRatio:.2,negativeRatio:.08,stabilityScore:80,avgCommentRating:4.3},business:{salesLift:32,gmv:80000000,conversionRate:.078,avgOrderValue:68,roi:3.5},riskEvents:[],cooperationHistory:[{brandName:"伊利",effectScore:88},{brandName:"三只松鼠",effectScore:85}]},
+  {id:"tgt-008",name:"王凯",category:"celebrity",industry:"fashion",social:{volume:18000,exposure:420000,engagement:52000,heatScore:68,followers:7600000,mediaCount:1300},sentiment:{positiveRatio:.48,neutralRatio:.3,negativeRatio:.22,stabilityScore:38,avgCommentRating:3.1},business:{salesLift:10,gmv:35000000,conversionRate:.038,avgOrderValue:298,roi:1.6},riskEvents:[{id:"risk-008-1",title:"与前经纪公司合同纠纷曝光",date:"2024-06-20",severity:"high",category:"legal",description:"前经纪公司发长文指控王凯违约跳槽",resolved:false},{id:"risk-008-2",title:"粉丝后援会管理层内讧",date:"2024-07-05",severity:"medium",category:"controversy",description:"粉丝后援会账目问题引发内部撕扯",resolved:false}],cooperationHistory:[{brandName:"李宁",effectScore:82},{brandName:"特步",effectScore:75}]},
+  {id:"tgt-009",name:"茶颜悦色 × 熊猫阿宝",category:"cooperation",industry:"food",social:{volume:85000,exposure:2800000,engagement:420000,heatScore:95,mediaCount:5600},sentiment:{positiveRatio:.8,neutralRatio:.15,negativeRatio:.05,stabilityScore:75,avgCommentRating:4.4},business:{salesLift:35,gmv:120000000,conversionRate:.12,avgOrderValue:45,roi:3.0},riskEvents:[],cooperationHistory:[]},
+  {id:"tgt-010",name:"兰蔻 × 林小夏",category:"cooperation",industry:"beauty",social:{volume:62000,exposure:2100000,engagement:310000,heatScore:90,mediaCount:4100},sentiment:{positiveRatio:.85,neutralRatio:.12,negativeRatio:.03,stabilityScore:86,avgCommentRating:4.6},business:{salesLift:28,gmv:250000000,conversionRate:.095,avgOrderValue:520,roi:4.2},riskEvents:[],cooperationHistory:[]},
+  {id:"tgt-011",name:"雷蛇 × 星际游侠",category:"cooperation",industry:"3c",social:{volume:35000,exposure:950000,engagement:68000,heatScore:76,mediaCount:1900},sentiment:{positiveRatio:.55,neutralRatio:.25,negativeRatio:.2,stabilityScore:52,avgCommentRating:3.5},business:{salesLift:18,gmv:60000000,conversionRate:.048,avgOrderValue:780,roi:1.9},riskEvents:[{id:"risk-011-1",title:"联名款定价较普通款溢价80%",date:"2024-01-20",severity:"medium",category:"negative_opinion",description:"玩家对比发现联名鼠标比普通同配置款贵近一倍",resolved:false}],cooperationHistory:[]},
+  {id:"tgt-012",name:"喜茶 × 青瓷物语",category:"cooperation",industry:"food",social:{volume:42000,exposure:1300000,engagement:180000,heatScore:74,mediaCount:2800},sentiment:{positiveRatio:.35,neutralRatio:.25,negativeRatio:.4,stabilityScore:28,avgCommentRating:2.6},business:{salesLift:0,gmv:0,conversionRate:0,avgOrderValue:0,roi:0},riskEvents:[{id:"risk-012-1",title:"预热海报被指文化挪用",date:"2024-07-10",severity:"high",category:"controversy",description:"leaked的设计稿将青瓷纹样与现代涂鸦混搭，被非遗保护者批评",resolved:false}],cooperationHistory:[]}
+];
+
+function normalize(v,max){return Math.max(0,Math.min(100,(v/max)*100))}
+function calcComm(t){
+  const b={maxDailyVolume:70000,maxDailyExposure:2000000,maxHeatScore:100,maxEngagementRate:.05};
+  const s=t.social;
+  return Math.round(normalize(s.volume,b.maxDailyVolume)*.25+normalize(s.exposure,b.maxDailyExposure)*.25+s.heatScore*.3+normalize(s.volume>0?s.engagement/s.volume:0,b.maxEngagementRate)*.2);
+}
+function calcComm2(t){
+  const b={maxSalesLift:50,maxGmv:250000000,maxConversionRate:.15,maxAvgOrderValue:800};
+  const bu=t.business;
+  if(bu.salesLift||bu.gmv){
+    const w=[],sc=[];
+    if(bu.salesLift){w.push(.35);sc.push(normalize(bu.salesLift,b.maxSalesLift))}
+    if(bu.gmv){w.push(.25);sc.push(normalize(bu.gmv,b.maxGmv))}
+    if(bu.conversionRate){w.push(.25);sc.push(normalize(bu.conversionRate,b.maxConversionRate))}
+    if(bu.avgOrderValue){w.push(.15);sc.push(normalize(bu.avgOrderValue,b.maxAvgOrderValue))}
+    const tw=w.reduce((a,b)=>a+b,0);
+    return tw>0?Math.round(sc.reduce((a,s,i)=>a+s*w[i],0)/tw):50;
+  }
+  if(t.cooperationHistory.length>0)return Math.round(t.cooperationHistory.reduce((s,h)=>s+h.effectScore,0)/t.cooperationHistory.length);
+  return 50;
+}
+function calcRep(t){
+  const s=t.sentiment;
+  return Math.round(s.positiveRatio*100+(s.avgCommentRating/5)*100*.3+s.stabilityScore*.3);
+}
+function calcRisk(t){
+  const s=t.sentiment;
+  const nb=s.negativeRatio*60;
+  let es=0;
+  t.riskEvents.forEach(e=>{const m={low:5,medium:15,high:30,critical:50};es+=m[e.severity]*(e.resolved?.3:1)});
+  es=Math.min(40,es);
+  return Math.min(100,Math.round(nb+es+(100-s.stabilityScore)*.2));
+}
+function calcGrade(s){if(s>=90)return'S';if(s>=80)return'A';if(s>=70)return'B';if(s>=60)return'C';return'D'}
+function calcTotal(d){return Math.round(d.comm*.3+d.comm2*.25+d.rep*.25+(100-d.risk)*.2)}
+
+const scores=targets.map(t=>{
+  const comm=calcComm(t),comm2=calcComm2(t),rep=calcRep(t),risk=calcRisk(t);
+  return{id:t.id,name:t.name,category:t.category,industry:t.industry,heat:t.social.heatScore,comm,comm2,rep,risk,total:calcTotal({comm,comm2,rep,risk}),grade:calcGrade(calcTotal({comm,comm2,rep,risk})),riskEvents:t.riskEvents};
+}).sort((a,b)=>b.total-a.total);
+
+const avgScore=Math.round(scores.reduce((s,x)=>s+x.total,0)/scores.length);
+const unresolved=scores.reduce((s,x)=>s+x.riskEvents.filter(e=>!e.resolved).length,0);
+const ipCount=targets.filter(t=>t.category==='ip').length;
+const celebCount=targets.filter(t=>t.category==='celebrity').length;
+const coopCount=targets.filter(t=>t.category==='cooperation').length;
+
+const kpi=[
+  {label:'监控对象总数',value:targets.length,sub:`IP ${ipCount} · 艺人 ${celebCount} · 合作 ${coopCount}`},
+  {label:'平均综合评分',value:avgScore,sub:'全库加权平均'},
+  {label:'未解决风险',value:unresolved,sub:unresolved>0?'需重点关注':'状态良好'},
+  {label:'S级对象',value:scores.filter(s=>s.grade==='S').length,sub:'顶级合作候选'}
+];
+document.getElementById('kpi-grid').innerHTML=kpi.map(k=>`<div class="kpi-card"><div class="label">${k.label}</div><div class="value">${k.value}</div><div class="sub">${k.sub}</div></div>`).join('');
+
+const catMap={ip:'IP',celebrity:'艺人',cooperation:'合作'};
+const indMap={toy:'潮玩','3c':'3C数码',travel:'文旅',beauty:'美妆',food:'食品饮料',fashion:'服饰'};
+const sevMap={low:'低',medium:'中',high:'高',critical:'危急'};
+
+function renderTable(filter){
+  const rows=scores.filter(s=>!filter||s.category===filter).map(s=>{
+    const t=targets.find(x=>x.id===s.id);
+    const risks=s.riskEvents.filter(e=>!e.resolved).length;
+    const color=s.total>=80?'#22c55e':s.total>=60?'#3b82f6':'#ef4444';
+    return `<tr>
+      <td><strong>${s.name}</strong></td>
+      <td><span class="badge badge-${s.category}">${catMap[s.category]}</span></td>
+      <td>${indMap[s.industry]||s.industry}</td>
+      <td>${s.heat}</td>
+      <td>${s.comm}</td>
+      <td>${s.comm2}</td>
+      <td>${s.rep}</td>
+      <td><span style="color:${s.risk>40?'#ef4444':'#64748b'}">${s.risk}</span></td>
+      <td><span class="score" style="color:${color}">${s.total}</span></td>
+      <td><span class="badge badge-${s.grade.toLowerCase()}">${s.grade}</span></td>
+      <td>${risks>0?`<span style="color:#ef4444;font-weight:600">${risks}个</span>`:'—'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('table-body').innerHTML=rows;
+}
+renderTable(null);
+
+function switchTab(el,id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const map={'tab-all':null,'tab-ip':'ip','tab-celeb':'celebrity','tab-coop':'cooperation'};
+  renderTable(map[id]);
+}
+
+document.getElementById('ranking-body').innerHTML=scores.map((s,i)=>{
+  const color=s.total>=80?'#22c55e':s.total>=60?'#3b82f6':'#ef4444';
+  return `<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #e2e8f0">
+    <div style="width:24px;text-align:center;font-weight:700;color:#94a3b8">${i+1}</div>
+    <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">${s.name}</div>
+    <div style="font-size:11px;color:#64748b">传播${s.comm} · 商业${s.comm2} · 口碑${s.rep} · 风险${s.risk}</div></div>
+    <div style="font-size:11px"><span class="badge badge-${s.grade.toLowerCase()}">${s.grade}</span></div>
+    <div style="font-weight:700;width:28px;text-align:right">${s.total}</div>
+    <div class="progress" style="width:80px"><div class="progress-bar" style="width:${s.total}%;background:${color}"></div></div>
+  </div>`;
+}).join('');
+
+const allRisks=targets.flatMap(t=>t.riskEvents.map(e=>({...e,targetName:t.name})));
+document.getElementById('risk-body').innerHTML=allRisks.length?allRisks.map(r=>`
+  <div class="risk-item">
+    <div class="title">${r.title}</div>
+    <div class="desc">${r.description}</div>
+    <div class="meta">
+      <span>对象：${r.targetName}</span>
+      <span>日期：${r.date}</span>
+      <span>严重度：<span class="badge badge-${r.severity}">${sevMap[r.severity]}</span></span>
+      <span>状态：${r.resolved?'已解决':'未解决'}</span>
+    </div>
+  </div>
+`).join(''):'<div style="color:#64748b;font-size:13px">当前无风险事件</div>';
+
+function evaluateAlerts(){
+  const alerts=[];
+  targets.forEach(t=>{
+    const s=t.sentiment;
+    if(s.negativeRatio>.6)alerts.push({severity:'warning',msg:`${t.name} 负面情感占比 ${(s.negativeRatio*100).toFixed(0)}%，超过阈值 60%`});
+    const dayAgo=new Date();dayAgo.setDate(dayAgo.getDate()-1);
+    const newRisks=t.riskEvents.filter(e=>!e.resolved&&new Date(e.date)>dayAgo);
+    if(newRisks.length>0)alerts.push({severity:'critical',msg:`${t.name} 新增 ${newRisks.length} 个未解决风险事件：${newRisks[0].title}`});
+  });
+  return alerts.length?alerts:[{severity:'info',msg:'当前所有监控指标正常，未触发任何预警规则'}];
+}
+
+const alerts=evaluateAlerts();
+document.getElementById('alert-body').innerHTML=alerts.map(a=>`
+  <div class="alert-card ${a.severity}">
+    <div class="title">${a.severity==='critical'?'严重':a.severity==='warning'?'警告':'提醒'}</div>
+    <div class="msg">${a.msg}</div>
+  </div>
+`).join('');
+
+function startServer(){
+  const el=document.getElementById('server-status');
+  el.textContent='正在启动...';
+  fetch('http://localhost:3456/').then(()=>{
+    el.textContent='服务器已在运行，请访问 http://localhost:3456';
+    window.open('http://localhost:3456','_blank');
+  }).catch(()=>{
+    el.textContent='请手动双击项目目录中的「启动看板.bat」或「start.vbs」启动服务器';
+  });
+}
+</script>
+</body>
+</html>
